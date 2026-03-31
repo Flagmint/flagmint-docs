@@ -2,6 +2,7 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "Flagmint Docs",
+  "openapi": "/api-reference/openapi.json",
   "colors": {
     "primary": "#4C1D95",
     "light": "#7C3AED",
@@ -14,18 +15,18 @@
   },
   "navbar": {
     "links": [
-      { "label": "Dashboard", "href": "https://app.flagmint.com" },
+      { "label": "Dashboard", "href": "https://flagmint.com/dashboard" },
       { "label": "Support", "href": "mailto:support@flagmint.com" }
     ],
     "primary": {
       "type": "button",
       "label": "Get Started Free",
-      "href": "https://app.flagmint.com/register"
+      "href": "https://flagmint.com/onboarding/create"
     }
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/flagmint",
+      "github": "https://github.com/jtad009/Flagmint-ui",
       "linkedin": "https://linkedin.com/company/flagmint"
     }
   },
