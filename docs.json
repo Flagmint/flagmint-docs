@@ -1,0 +1,124 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Flagmint Docs",
+  "colors": {
+    "primary": "#4C1D95",
+    "light": "#7C3AED",
+    "dark": "#4C1D95"
+  },
+  "favicon": "/favicon.svg",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      { "label": "Dashboard", "href": "https://app.flagmint.com" },
+      { "label": "Support", "href": "mailto:support@flagmint.com" }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get Started Free",
+      "href": "https://app.flagmint.com/register"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/flagmint",
+      "linkedin": "https://linkedin.com/company/flagmint"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "getting-started/introduction",
+              "getting-started/quickstart",
+              "getting-started/concepts",
+              "getting-started/your-first-flag"
+            ]
+          },
+          {
+            "group": "Platform",
+            "pages": [
+              "platform/flags",
+              "platform/targeting-rules",
+              "platform/segments",
+              "platform/rollouts",
+              "platform/environments",
+              "platform/projects",
+              "platform/organisations"
+            ]
+          },
+          {
+            "group": "Billing & Plans",
+            "pages": [
+              "billing/plans",
+              "billing/usage",
+              "billing/subscriptions"
+            ]
+          },
+          {
+            "group": "Security & Compliance",
+            "pages": [
+              "security/gdpr",
+              "security/data-residency",
+              "security/dpa",
+              "security/practices"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "resources/migrate-from-launchdarkly",
+              "resources/best-practices",
+              "resources/troubleshooting",
+              "resources/changelog"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "SDKs",
+        "groups": [
+          {
+            "group": "Client-Side SDKs",
+            "pages": ["sdks/react", "sdks/vuejs"]
+          },
+          {
+            "group": "Server-Side SDKs",
+            "pages": ["sdks/nodejs"]
+          },
+          {
+            "group": "Direct Integration",
+            "pages": ["sdks/rest-api"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["api-reference/authentication", "api-reference/errors"]
+          },
+          {
+            "group": "Evaluation",
+            "pages": ["api-reference/evaluate"]
+          },
+          {
+            "group": "Management",
+            "pages": ["api-reference/flags", "api-reference/segments", "api-reference/environments"]
+          }
+        ]
+      }
+    ]
+  },
+  "seo": { "indexHiddenPages": false },
+  "feedback": { "thumbsRating": true, "suggestEdit": true }
+}
