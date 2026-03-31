@@ -160,7 +160,7 @@
             "pages": [
               "api-reference/project/get-projects",
               "api-reference/project/post-projects",
-              "api-reference/project/get-projects-1",
+              "api-reference/project/get-project",
               "api-reference/project/put-projects",
               "api-reference/project/delete-projects"
             ]
@@ -168,11 +168,11 @@
           {
             "group": "Project Analytics",
             "pages": [
-              "api-reference/project/get-projects-analyticsmetrics",
-              "api-reference/project/get-projects-analyticsevaluations",
-              "api-reference/project/get-projects-analyticsdistribution",
-              "api-reference/project/get-projects-analyticsresponse-time",
-              "api-reference/project/get-projects-analyticstop-flags"
+              "api-reference/project/get-projects-analytics-metrics",
+              "api-reference/project/get-projects-analytics-evaluations",
+              "api-reference/project/get-projects-analytics-distribution",
+              "api-reference/project/get-projects-analytics-response-time",
+              "api-reference/project/get-projects-analytics-top-flags"
             ]
           },
           {
