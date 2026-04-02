@@ -1,8 +1,266 @@
 ---
 title: "Projects"
-description: "Coming soon."
+description: "Organize your feature flags, environments, and analytics under projects"
 ---
 
+# Projects
+
+A project is the top-level organizational unit in Flagmint. Every feature flag, environment, segment, and targeting rule belongs to a project. Projects are scoped to your organization — each organization can have multiple projects, and each project has its own set of environments, flags, and analytics.
+
+## Dashboard Overview
+
+The projects page shows all your projects in either a **grid** or **table** view, with search and filtering built in. Each project card shows the project name, key, description, flag count, segment count, environment count, and creation date.
+
+<img src="/images/projects-list.png" alt="Projects page showing project cards in grid view with flag counts and environment counts" />
+
+The currently active project is marked with a **Current** badge. You can switch between projects, edit their settings, or archive them from the action menu on each card.
+
+### Switching Projects
+
+Clicking **Switch** on a project card opens a confirmation dialog before changing your active project. After confirming, you're redirected to the flags page for the new project. You can also switch projects using the project selector dropdown in the sidebar.
+
+<img src="/images/projects-switcher.png" alt="Project switcher dropdown in the sidebar" />
+
+## Creating a Project
+
+### From the Dashboard
+
+Click **Create Project** in the header. You'll need to provide a project name, a project key, and an optional description.
+
+<img src="/images/projects-create.png" alt="Create project dialog with name, project key, and description fields" />
+
+After creation, you're redirected to the project's default environment page.
+
+### Via the API
+
+```bash
+curl -X POST https://api.flagmint.com/projects \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My App",
+    "projectKey": "my-app-prod",
+    "description": "Main application project"
+  }'
+```
+
+### What gets created
+
+When you create a project, Flagmint automatically creates two default environments:
+
+| Environment | Slug | Default | Description |
+|-------------|------|---------|-------------|
+| **Live** | `live` | Yes | Production environment. Changes here affect your end users. |
+| **Staging** | `staging` | No | Staging environment. Use this to test flags before rolling out to production. |
+
+You can add more environments later (e.g. development, QA, canary) from the project settings.
+
+## Project Structure
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | string | Human-readable project name. Must be unique within the organization. |
+| `projectKey` | string | A unique key used in SDK configurations (8–64 characters). This is what your SDKs reference. |
+| `description` | string (optional) | A brief description of the project's purpose. |
+| `environments` | array | List of environments within the project. |
+| `flags_count` | number | Total number of active (non-deleted, non-archived) flags in the project. |
+
 <Note>
-  This page is under construction. Check back soon or [contact us](mailto:support@flagmint.com) if you need this information now.
+  The `projectKey` is immutable after creation and must be unique across the entire platform. Choose something descriptive and stable — your SDKs will reference it. Examples: `my-app-prod`, `checkout-service`, `mobile-app-eu`.
 </Note>
+
+## Environments
+
+Environments let you configure flags differently across stages of your deployment pipeline. Each environment within a project has independent flag values, targeting rules, and rollouts.
+
+A typical setup looks like:
+
+```
+Project: "Checkout Service"
+├── Live        (production — real users)
+├── Staging     (pre-production testing)
+└── Development (local/CI testing)
+```
+
+Flags are created at the project level, but their behavior is configured per environment. This means a flag can be active in staging (for testing) while remaining inactive in production. See [Feature Flags — Per-Environment Configuration](/concepts/flags#per-environment-configuration) for details.
+
+## Analytics
+
+Flagmint provides project-level analytics that aggregate evaluation data across all flags in a project for a given environment. Analytics are powered by a `project_daily_analytics` materialized view that is refreshed at least hourly.
+
+### Summary Metrics
+
+The analytics dashboard shows five key metrics with period-over-period comparison:
+
+<img src="/images/projects-analytics.png" alt="Project analytics dashboard showing summary metrics and evaluation charts" />
+
+| Metric | Description |
+|--------|-------------|
+| **Total Evaluations** | Total number of flag evaluations across all flags in the project |
+| **Unique Users** | Distinct users who triggered evaluations |
+| **Success Rate** | Percentage of evaluations that completed without errors |
+| **Error Rate** | Percentage of evaluations that resulted in errors |
+| **Avg Response Time** | Weighted average evaluation time in milliseconds |
+
+Each metric includes a `change` value showing the percentage difference compared to the previous period of equal length.
+
+```bash
+curl "https://api.flagmint.com/projects/{projectId}/analytics/metrics?environmentId={envId}&period=7d" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Evaluations by Day
+
+Daily evaluation and error counts for the project, useful for spotting trends and anomalies.
+
+```bash
+curl "https://api.flagmint.com/projects/{projectId}/analytics/evaluations?environmentId={envId}&period=30d" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+**Response:**
+
+```json
+[
+  { "date": "2026-03-15", "evaluations": 12450, "errors": 3 },
+  { "date": "2026-03-16", "evaluations": 13200, "errors": 0 }
+]
+```
+
+### Response Time by Day
+
+Daily weighted-average response times, useful for monitoring evaluation performance over time.
+
+```bash
+curl "https://api.flagmint.com/projects/{projectId}/analytics/response-time?environmentId={envId}&period=30d" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Flag Distribution
+
+Evaluation share per flag — shows which flags are consuming the most evaluations in the project.
+
+```bash
+curl "https://api.flagmint.com/projects/{projectId}/analytics/distribution?environmentId={envId}&period=30d" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+**Response:**
+
+```json
+[
+  { "flagId": "...", "flagKey": "new_dashboard", "flagName": "New Dashboard", "evaluations": 45000, "percentage": 62.3 },
+  { "flagId": "...", "flagKey": "dark_mode", "flagName": "Dark Mode", "evaluations": 27200, "percentage": 37.7 }
+]
+```
+
+### Top Flags
+
+The top 10 flags ranked by evaluation count, with error rate and average response time per flag. Use this to identify your most-used flags and any that may have performance issues.
+
+```bash
+curl "https://api.flagmint.com/projects/{projectId}/analytics/top-flags?environmentId={envId}&period=7d" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+**Response:**
+
+```json
+[
+  {
+    "flagId": "...",
+    "flagKey": "new_dashboard",
+    "flagName": "New Dashboard",
+    "evaluations": 45000,
+    "errors": 12,
+    "errorRate": 0.03,
+    "avgResponseTimeMs": 1.24
+  }
+]
+```
+
+### Time Periods and Caching
+
+All analytics endpoints support three time periods: `24h`, `7d`, and `30d`. An `environmentId` query parameter is always required.
+
+Analytics responses are cached in Redis for 5 minutes (configurable via `REDIS_ANALYTICS_TTL` environment variable). This means there's a slight delay between live evaluations and their appearance in analytics — this is by design to keep analytics queries fast.
+
+## Managing Projects
+
+### Editing a project
+
+Click the **Edit** option from a project card's action menu, or use the API. The edit dialog reuses the same form as creation, with the project's current values pre-filled. You can update the name and description — the project key cannot be changed after creation.
+
+```bash
+curl -X PUT https://api.flagmint.com/projects/{projectId} \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My App (EU)",
+    "description": "EU-region deployment"
+  }'
+```
+
+### Archiving a project
+
+Click **Archive** from the project card's action menu, or use the API. Archiving is a soft delete — the project is marked as deleted and excluded from list queries. All flags and environments within the project remain intact but are no longer accessible. The organization's project usage count is decremented.
+
+```bash
+curl -X DELETE https://api.flagmint.com/projects/{projectId} \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+The dashboard shows a confirmation dialog before archiving, since this affects all flags and environments within the project.
+
+### View modes
+
+The projects page supports two view modes, toggled from the toolbar:
+
+- **Grid view** — Project cards in a responsive grid (1 column on mobile, 2 on tablet, 3 on desktop)
+- **Table view** — Sortable table with project name, key, last updated date, and action buttons
+
+Both views support search by project name or key, and pagination.
+
+### Permissions
+
+| Action | Required Role |
+|--------|--------------|
+| List projects | Authenticated user |
+| View / create / update / delete projects | Editor role |
+
+### Uniqueness constraints
+
+| Field | Scope | Error |
+|-------|-------|-------|
+| `name` | Per organization | `409` — "Project name already exists in this organization" |
+| `projectKey` | Per organization | `409` — "Project key already exists" |
+
+## Empty State
+
+When your organization has no projects yet, the dashboard shows an empty state with a prompt to create your first project. The sidebar is hidden in this state to keep the focus on getting started.
+
+<img src="/images/projects-empty.png" alt="Empty state shown when no projects exist, with a Create Project prompt" />
+
+## API Reference
+
+### Project CRUD
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/projects` | Create a new project |
+| `GET` | `/projects` | List all projects (paginated, searchable) |
+| `GET` | `/projects/{id}` | Get a single project |
+| `PUT` | `/projects/{id}` | Update a project |
+| `DELETE` | `/projects/{id}` | Soft delete (archive) a project |
+
+### Project Analytics
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/projects/{projectId}/analytics/metrics` | Summary metrics with period comparison |
+| `GET` | `/projects/{projectId}/analytics/evaluations` | Daily evaluation counts |
+| `GET` | `/projects/{projectId}/analytics/response-time` | Daily average response times |
+| `GET` | `/projects/{projectId}/analytics/distribution` | Per-flag evaluation share |
+| `GET` | `/projects/{projectId}/analytics/top-flags` | Top 10 flags by evaluation count |
+
+All analytics endpoints require `environmentId` as a query parameter and optionally accept `period` (`24h`, `7d`, or `30d`, defaults to `30d`). The list endpoint supports search via the `q` query parameter, matching on project name or key.

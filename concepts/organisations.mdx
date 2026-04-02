@@ -1,8 +1,308 @@
 ---
-title: "Organisations"
-description: "Coming soon."
+title: "Organizations"
+description: "Set up your organization, manage members, plans, and data exports"
 ---
 
+# Organizations
+
+An organization is the root entity in Flagmint. Everything — projects, flags, environments, segments, members, and billing — belongs to an organization. When you sign up for Flagmint, the first thing you do is create an organization.
+
+## Getting Started
+
+### Creating Your Organization
+
+There are two ways to create an organization, depending on how you signed up.
+
+**After email registration:** When you register with email and password, you create an organization and admin account in a single step. You'll provide an organization name, admin email, admin name, and optionally a billing email.
+
+**After social login (Google OAuth):** If you signed in with Google, you'll be prompted to set up your organization during onboarding. You provide an organization name and optionally a billing email — your Google account details are used for the rest.
+
+Both paths support selecting a plan at creation time by passing Stripe `price` and `product` query parameters. If omitted, the organization starts on the Free plan.
+
+```bash
+# Registration path (public, no auth required)
+curl -X POST https://api.flagmint.com/organizations \
+  -H "Content-Type: application/json" \
+  -d '{
+    "orgName": "Acme Corp",
+    "adminEmail": "alice@acme.com",
+    "adminName": "Alice",
+    "billingEmail": "billing@acme.com"
+  }'
+```
+
+```bash
+# Setup path (authenticated, after social login)
+curl -X POST https://api.flagmint.com/organizations/setup \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "orgName": "Acme Corp",
+    "billingEmail": "billing@acme.com"
+  }'
+```
+
+After creation, the admin receives an invitation email to complete their account setup.
+
+### What Happens Next
+
+Once your organization exists, you can:
+
+1. **Create a project** — Projects organize your flags by application or service. See [Projects](/concepts/projects).
+2. **Invite team members** — Add editors and viewers to collaborate on flag management.
+3. **Connect your SDK** — Use your project key and environment API key to start evaluating flags. See the [Quick Start](/quickstart).
+
+## Organization Structure
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | string | Organization display name |
+| `billing_email` | string | Where invoices and receipts are sent. Falls back to the owner's email if not set. |
+| `plan_id` | string | Current plan (Free, Pro, Growth, or Custom) |
+| `subscription_status` | enum | Stripe subscription state |
+| `flag_count` | number | Total flags across all projects |
+| `project_count` | number | Total projects |
+| `environment_count` | number | Total environments across all projects |
+| `api_usage` | number | API calls consumed in the current billing period |
+| `metadata` | object | Arbitrary key-value data (Stripe IDs, internal notes, etc.) |
+
+### Subscription Status
+
+| Status | Description |
+|--------|-------------|
+| `trialing` | Free trial period (default for new organizations) |
+| `active` | Paid subscription in good standing |
+| `past_due` | Payment failed, grace period active |
+| `canceled` | Subscription cancelled |
+| `incomplete` | Initial payment not yet confirmed |
+| `incomplete_expired` | Initial payment window expired |
+
+## Plans & Billing
+
+Flagmint uses **flat per-organization pricing in EUR** — no per-seat fees. Every member of your organization has full access at no additional cost.
+
+| Plan | Price | API Calls | Flags | Projects |
+|------|-------|-----------|-------|----------|
+| **Free** | €0 forever | 500/month (throttled after limit) | 5 | 1 |
+| **Pro** | €29/month | 50,000/month | Unlimited | Unlimited |
+| **Growth** | €79/month | 500,000/month | Unlimited | Unlimited |
+| **Custom** | Quoted | Contract-based | Unlimited | Unlimited |
+
+Overage on Pro and Growth plans is billed at €4 and €3.50 per additional 1M API calls respectively, rounded up to full blocks. A 20% grace buffer applies before overage charges begin. Stripe handles subscription renewal and overage billing automatically.
+
+Free plan users are throttled (not blocked) when they exceed their API call limit — the SDK continues working with cached flag values.
+
+For Custom plan inquiries, contact [sales@flagmint.com](mailto:sales@flagmint.com).
+
 <Note>
-  This page is under construction. Check back soon or [contact us](mailto:support@flagmint.com) if you need this information now.
+  Plan limits are enforced at creation time for flags and projects. If you're on the Free plan and try to create a 6th flag, the API returns a `403` error with a message indicating the limit has been reached.
 </Note>
+
+## Members & Roles
+
+Organizations support role-based access control with three roles:
+
+| Role | Can view flags & projects | Can create/edit/delete | Can manage org settings & members |
+|------|--------------------------|----------------------|----------------------------------|
+| **Admin** | Yes | Yes | Yes |
+| **Editor** | Yes | Yes | No |
+| **Viewer** | Yes | No | No |
+
+### Inviting Members
+
+Admins can invite new members by email. The invited user receives an email with a link to join the organization. Until they accept, their status shows as `invited`.
+
+<video
+  autoPlay
+  loop
+  muted
+  playsInline
+  className="w-full rounded-lg"
+  src="https://res.cloudinary.com/dc9t82u9g/video/upload/v1775161759/flagmint/marketing/videos/invitation.mp4"
+/>
+### Revoking Access
+
+Admins can revoke a member's access at any time. A reason is required (for audit purposes), and the revoked member receives an email notification.
+<video
+  autoPlay
+  loop
+  muted
+  playsInline
+  className="w-full rounded-lg"
+  src="https://res.cloudinary.com/dc9t82u9g/video/upload/v1775160673/flagmint/marketing/videos/revoke_users.mov"
+/>
+
+```bash
+curl -X DELETE https://api.flagmint.com/organizations/{orgId}/members/{memberId} \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reason": "Employee left the company"
+  }'
+```
+
+<Warning>
+  You cannot revoke your own membership if you are the only admin. Ensure another admin exists before attempting to leave.
+</Warning>
+
+## Updating Your Organization
+
+Update the organization name, billing email, or metadata. Updates are partial — only included fields are modified.
+<video
+  autoPlay
+  loop
+  muted
+  playsInline
+  className="w-full rounded-lg"
+  src="https://res.cloudinary.com/dc9t82u9g/video/upload/v1775161310/flagmint/marketing/videos/edit-org.mov"
+/>
+
+```bash
+curl -X PUT https://api.flagmint.com/organizations/{orgId} \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Acme Corp EU",
+    "billing_email": "eu-billing@acme.com"
+  }'
+```
+
+### Metadata Management
+
+Organization metadata is a flexible key-value store. You can add/update keys with `metadata_updates` and remove keys with `metadata_deletes` in a single request. Updates are applied before deletes.
+
+```bash
+curl -X PUT https://api.flagmint.com/organizations/{orgId} \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "metadata_updates": {
+      "industry": "fintech",
+      "region": "eu"
+    },
+    "metadata_deletes": ["legacy_field"]
+  }'
+```
+
+## Deleting Your Organization
+
+Organization deletion is a two-phase process designed to prevent accidental data loss.
+
+### Phase 1: Soft Delete
+
+When you request deletion, the organization is immediately marked as deleted and a hard deletion job is scheduled. The deletion date is set to either the end of your current billing period or 30 days from now (whichever is later).
+
+```bash
+curl -X DELETE https://api.flagmint.com/organizations/{orgId} \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Response (202 Accepted):**
+
+```json
+{
+  "statusCode": 202,
+  "message": "Organization marked for deletion. Data will be permanently deleted on 2026-05-02T00:00:00.000Z",
+  "deletionScheduledAt": "2026-05-02T00:00:00.000Z"
+}
+```
+
+During this grace period, the organization is soft-deleted — it still exists in the database but is excluded from active queries. You can still access it to export your data.
+
+### Phase 2: Undo or Permanent Deletion
+
+**To cancel deletion** before the scheduled date:
+
+```bash
+curl -X POST https://api.flagmint.com/organizations/{orgId}/undo-deletion \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+This restores the organization to active status and cancels the scheduled hard deletion job.
+
+**If no action is taken**, the hard deletion job runs at the scheduled time and permanently removes all organization data.
+
+## Data Export
+
+Organizations can request a complete data export for compliance, backup, or migration purposes. Exports are queued as background jobs and include all organization data (projects, flags, environments, targeting rules, segments, and evaluation data).
+
+### Requesting an Export
+
+```bash
+curl -X POST https://api.flagmint.com/organizations/{orgId}/export \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Response (202 Accepted):**
+
+```json
+{
+  "exportId": "export-uuid",
+  "statusUrl": "/organizations/{orgId}/export/{exportId}",
+  "estimatedCompletionTime": "2026-04-02T12:05:00.000Z"
+}
+```
+
+Exports are rate limited to **1 per hour per organization**. If you request another export within the hour, the API returns `429 Too Many Requests` with a `retryAfter` value.
+
+### Checking Export Status
+
+```bash
+curl https://api.flagmint.com/organizations/{orgId}/export/{exportId} \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+The export moves through these statuses:
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Export queued, waiting for processing |
+| `processing` | Export is being generated |
+| `completed` | Export ready for download. Response includes `downloadUrl`, `fileSize`, `expiresAt`, and `downloadCount`. |
+| `failed` | Export failed. Response includes `error` message. |
+
+Completed exports include a download URL (hosted on Cloudinary) with an expiration date. Once expired, the file is deleted and a new export must be requested.
+
+### Sample Export Data
+
+To see an example of the exported data structure, view this [sample organization export JSON](https://res.cloudinary.com/dc9t82u9g/raw/private/s--qJURiq9l--/v1775161236/flagmint/exports/org_test.json).
+
+## Permissions Summary
+
+| Action | Required Role |
+|--------|--------------|
+| View organization | Any authenticated member |
+| Update organization | Admin |
+| Delete organization | Admin |
+| Undo deletion | Admin |
+| List members | Admin |
+| Revoke members | Admin |
+| Request data export | Admin |
+| List all organizations | Support admin (internal) |
+
+## API Reference
+
+### Organization CRUD
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/organizations` | Register a new organization with admin (public) |
+| `POST` | `/organizations/setup` | Set up org for authenticated user (after social login) |
+| `GET` | `/organizations/{orgId}` | Get organization details |
+| `PUT` | `/organizations/{orgId}` | Update organization |
+| `DELETE` | `/organizations/{orgId}` | Soft delete (schedule deletion) |
+| `POST` | `/organizations/{orgId}/undo-deletion` | Cancel scheduled deletion |
+
+### Members
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/organizations/{orgId}/members` | List members (paginated) |
+| `DELETE` | `/organizations/{orgId}/members/{memberId}` | Revoke membership |
+
+### Data Export
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/organizations/{orgId}/export` | Request data export |
+| `GET` | `/organizations/{orgId}/export/{exportId}` | Get export status |
