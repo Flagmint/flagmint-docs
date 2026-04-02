@@ -1,218 +1,263 @@
 ---
 title: "Quick Start"
-description: "Get your first feature flag running in 5 minutes."
+description: "Create your first feature flag and integrate the Flagmint SDK in minutes"
 ---
 
-This guide takes you from zero to a working feature flag in your React app. By the end, you'll be toggling features from the Flagmint dashboard in real-time.
+## Get started in five steps
 
-<Info>
-  Using Vue.js or Node.js? The steps are the same — just swap the SDK. See [Vue SDK](/sdks/vuejs) or [Node.js SDK](/sdks/nodejs) for framework-specific setup.
-</Info>
-
-## Prerequisites
-
-- A Flagmint account ([sign up free](https://flagmint.com/onboarding/create))
-- A React application (Next.js, Vite, or Create React App)
-
-## 1. Get Your SDK Key
+Go from zero to evaluating feature flags in your application.
 
 <Steps>
-  <Step title="Create a project">
-    After signing in, create your first project (e.g., "Web App"). A project groups your flags together.
+  <Step title="Create an account and project">
+    Sign up at [app.flagmint.com](https://flagmint.com/onboarding/create/) and create your first project. Every project comes with **Live** and **Staging** environments out of the box.
   </Step>
-  <Step title="Find your SDK key">
-    Go to **Settings → Environments**. Each environment (Development, Staging, Production) has its own SDK key. Copy the **Development** key — it starts with `ff_`.
+
+  <Step title="Generate an API key">
+    Each API key is scoped to a specific **environment** within your project. This means you'll typically have separate keys for staging and production.
+
+    From the dashboard, navigate to **Settings** and click **Api keys**.
+
+   <video
+  autoPlay
+  loop
+  muted
+  playsInline
+  className="w-full rounded-lg"
+  src="https://res.cloudinary.com/dc9t82u9g/video/upload/v1775163665/flagmint/marketing/videos/create-api-key.mov
+"
+/>
+
+    Fill in the details:
+
+    - **Name** — A memorable label (e.g. "Production Server", "CI/CD Pipeline")
+    - **Environment** — Select which environment this key authenticates against (e.g. Live or Staging)
+    - **Permissions** — Choose `read`, `write`, or `admin` depending on the use case
+    - **Expires At** — Optionally set an expiration date. Leave empty for keys that never expire.
+
+    Click **Generate Key**. The full API key is shown once and copied to your clipboard automatically.
+
+    <Warning>
+      **Store your API key securely.** The full key is only displayed once at creation time. After that, only a masked version is visible in the dashboard. If you lose it, revoke the key and create a new one.
+    </Warning>
+
+    Your API keys table shows all active keys with their name, masked key, permissions, environment, last used timestamp, and expiration:
+
+    <img src="/images/api-keys-table.png" alt="API keys table showing name, masked key, permissions, environment, last used, and expiration columns" />
+
+    You can revoke any key at any time — applications using that key will lose access immediately.
+  </Step>
+
+  <Step title="Install the SDK">
+    Install the Flagmint JavaScript SDK in your application:
+
+    <CodeGroup>
+    ```bash npm
+    npm install flagmint-js-sdk
+    ```
+
+    ```bash yarn
+    yarn add flagmint-js-sdk
+    ```
+
+    ```bash pnpm
+    pnpm add flagmint-js-sdk
+    ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Create your first flag">
+    From the dashboard, click **+ New Flag** and choose a template:
+
+    - **Kill Switch** — Boolean flag that's on by default. Flip it off in an emergency.
+    - **Gradual Rollout** — Boolean flag that starts at 0% and increases over time.
+    - **A/B Test** — Multivariate flag for experiments.
+
+    Or create a standard flag with full control over type, key, and configuration.
+
+    For this quick start, create a **Kill Switch** called "New Dashboard":
+
+    ```bash
+    curl -X POST https://api.flagmint.com/projects/{projectId}/flags \
+      -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "name": "New Dashboard",
+        "template": "kill_switch"
+      }'
+    ```
+  </Step>
+
+  <Step title="Evaluate flags in your app">
+    Initialize the SDK with the API key you generated in Step 2. The key determines which environment's flags are returned:
+
+    ```javascript
+    import { FlagClient } from 'flagmint-js-sdk';
+
+    const client = new FlagClient({
+      apiKey: 'ff_your_api_key_here', // Your environment-scoped API key
+      context: {
+        kind: "multi",
+        user: {
+          kind: "user",
+          key: "user123",
+          email: "alice@example.com"
+        },
+        organization: {
+          kind: "organization",
+          key: "org456",
+          plan: "premium"
+        }
+      }
+    });
+
+    // Wait for connection — wrap in try/catch for resilience
+    try {
+      await client.ready();
+    } catch (err) {
+      console.warn('Using cached flags:', err.message);
+    }
+
+    // Use your flag
+    const showNewDashboard = client.getFlag('new_dashboard', false);
+
+    if (showNewDashboard) {
+      renderNewDashboard();
+    } else {
+      renderLegacyDashboard();
+    }
+    ```
+
+    The SDK connects via WebSocket for real-time updates (with automatic long-polling fallback) and caches flags locally by default for offline resilience.
+
+    <Note>
+      **One API key per environment.** Use your Staging key during development and your Live key in production. The SDK automatically receives the correct flag values for the environment the key is bound to.
+    </Note>
   </Step>
 </Steps>
 
 <Warning>
-  Never use your Production SDK key during development. Each environment has separate flag values and keys.
+  **Always wrap `ready()` in a try/catch.** If the Flagmint API is unreachable, `ready()` will reject. Cached flags may still be available via `getFlags()` — see the [Error Handling](/sdk/nodejs#error-handling) section for details.
 </Warning>
 
-## 2. Install the SDK
+## React integration
 
-<CodeGroup>
+For React apps, use the `subscribe()` method to keep your UI in sync with flag changes:
 
-```bash npm
-npm install flagmint-react-sdk
-```
+```javascript
+import { useEffect, useState } from 'react';
+import { FlagClient } from 'flagmint-js-sdk';
 
-```bash yarn
-yarn add flagmint-react-sdk
-```
+const client = new FlagClient({
+  apiKey: 'ff_your_api_key_here',
+  context: {
+    kind: "user",
+    user: { kind: "user", key: "user123" }
+  }
+});
 
-```bash pnpm
-pnpm add flagmint-react-sdk
-```
+export function App() {
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [ready, setReady] = useState(false);
 
-</CodeGroup>
+  useEffect(() => {
+    const unsubscribe = client.subscribe((flags) => {
+      setShowDashboard(flags['new_dashboard'] ?? false);
+    });
 
-## 3. Wrap Your App with the Provider
+    client.ready()
+      .then(() => setReady(true))
+      .catch(() => setReady(true)); // flags may be set from cache
 
-Add `FlagmintProvider` to your app's root layout. This creates a single connection to Flagmint that all your components share.
+    return () => unsubscribe();
+  }, []);
 
-<CodeGroup>
+  if (!ready) return <div>Loading...</div>;
 
-```tsx Next.js (App Router)
-// app/providers.tsx
-'use client';
-import { FlagmintProvider } from 'flagmint-react-sdk/client';
-
-export function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <FlagmintProvider
-      options={{
-        apiKey: process.env.NEXT_PUBLIC_FLAGMINT_KEY!,
-        transportMode: 'websocket',
-      }}
-    >
-      {children}
-    </FlagmintProvider>
-  );
-}
-
-// app/layout.tsx
-import { Providers } from './providers';
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html>
-      <body>
-        <Providers>{children}</Providers>
-      </body>
-    </html>
-  );
+  return showDashboard ? <NewDashboard /> : <LegacyDashboard />;
 }
 ```
 
-```tsx Vite / CRA
-// main.tsx
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { FlagmintProvider } from 'flagmint-react-sdk/client';
-import App from './App';
+## Invite your team
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <FlagmintProvider
-      options={{
-        apiKey: import.meta.env.VITE_FLAGMINT_KEY,
-        transportMode: 'websocket',
-      }}
-    >
-      <App />
-    </FlagmintProvider>
-  </React.StrictMode>
-);
-```
+Invite team members to collaborate on your feature flags. From the dashboard, navigate to **Settings** and add users by email.
 
-</CodeGroup>
+<video
+  autoPlay
+  loop
+  muted
+  playsInline
+  className="w-full rounded-lg"
+  src="https://res.cloudinary.com/dc9t82u9g/video/upload/v1775161759/flagmint/marketing/videos/invitation.mp4"
+/>
+
+Team members can be assigned **Editor** or **Viewer** roles. Editors can create and modify flags, segments, and targeting rules. Viewers have read-only access to all project data.
+
+## Managing API keys
+
+API keys are managed from the **Settings** page. You can:
+
+- **Generate** new keys scoped to any environment with specific permissions
+- **View** all active keys with masked values, permissions, environment, and last-used timestamps
+- **Revoke** keys instantly — any application using the revoked key loses access immediately
+
+<img src="/images/api-keys-revoke.png" alt="Revoke API key confirmation dialog showing key details and warning" />
 
 <Tip>
-  Place `FlagmintProvider` as high as possible in your component tree — ideally in the root layout. This avoids reconnecting the WebSocket on every route change.
+  **Best practice:** Create separate API keys for each deployment (e.g. one for your production server, one for CI/CD, one for local development). This way you can revoke a compromised key without affecting other deployments.
 </Tip>
 
-## 4. Create a Flag in the Dashboard
+## Updating context after login
 
-1. Go to your project in the Flagmint dashboard
-2. Click **Create Flag**
-3. Set the key to `new-feature`
-4. Set the type to **Boolean**
-5. Set the default variation to `false`
-6. Click **Create**
+When your user logs in or their attributes change, update the evaluation context to get re-evaluated flags:
 
-Your flag now exists but is turned off by default.
-
-## 5. Use the Flag in Your Code
-
-```tsx
-// components/MyFeature.tsx
-'use client';
-import { useFlag, useFlagmintReady } from 'flagmint-react-sdk/client';
-
-export function MyFeature() {
-  const isReady = useFlagmintReady();
-  const showNewFeature = useFlag<boolean>('new-feature', false);
-
-  if (!isReady) {
-    return <div>Loading...</div>;
+```javascript
+await client.updateContext({
+  kind: "multi",
+  user: {
+    kind: "user",
+    key: "user123",
+    email: "alice@example.com",
+    plan: "premium"
+  },
+  organization: {
+    kind: "organization",
+    key: "org456",
+    country: "DE"
   }
-
-  if (showNewFeature) {
-    return <div>Welcome to the new feature!</div>;
-  }
-
-  return <div>Original experience</div>;
-}
+});
 ```
 
-The `useFlag` hook takes two arguments:
-- **`'new-feature'`** — the flag key, matching what you created in the dashboard
-- **`false`** — the fallback value used if the SDK can't reach the server
+This triggers a re-fetch of flags with the new context, so targeting rules and rollouts reflect the updated user attributes.
 
-## 6. Toggle It Live
+## Kill the feature
 
-1. Go back to the Flagmint dashboard
-2. Find your `new-feature` flag
-3. Toggle it to **active** and set the default variation to `true`
-4. Watch your app update in real-time — no page refresh needed
+When something goes wrong, disable the flag instantly — either from the dashboard toggle or via the API:
 
-That's it. You're now controlling features from the dashboard.
-
-## 7. Add User Context (Optional)
-
-To target specific users, pass context when the user logs in:
-
-```tsx
-// app/FlagmintWithAuth.tsx
-'use client';
-import { FlagmintProvider } from 'flagmint-react-sdk/client';
-import { useUser } from '@/hooks/useUser';
-
-export function FlagmintWithAuth({ children }: { children: React.ReactNode }) {
-  const { user } = useUser();
-
-  return (
-    <FlagmintProvider
-      options={{
-        apiKey: process.env.NEXT_PUBLIC_FLAGMINT_KEY!,
-        transportMode: 'websocket',
-        context: user ? {
-          kind: 'multi',
-          user: {
-            kind: 'user',
-            key: user.id,
-            email: user.email,
-            plan: user.plan,
-          },
-          organization: {
-            kind: 'organization',
-            key: user.orgId,
-          },
-        } : undefined,
-      }}
-    >
-      {children}
-    </FlagmintProvider>
-  );
-}
+```bash
+curl -X PUT https://api.flagmint.com/projects/{projectId}/flags/{flagId} \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "is_active": false,
+    "envId": "YOUR_ENVIRONMENT_ID"
+  }'
 ```
 
-Now you can create targeting rules in the dashboard like "show this feature only to users on the Pro plan" or "roll out to 25% of users."
+The SDK receives the update in real time. All users immediately get the off variation (`false`).
 
-## Next Steps
+## What's next
 
 <CardGroup cols={2}>
-  <Card title="Core Concepts" icon="book" href="/getting-started/concepts">
-    Understand flags, variations, targeting rules, segments, and rollouts.
+  <Card title="SDK Reference" icon="js" href="/sdk/nodejs">
+    Full SDK documentation — caching, transport modes, deferred initialization, and more.
   </Card>
-  <Card title="Your First Flag (Tutorial)" icon="flag" href="/getting-started/your-first-flag">
-    A deeper walkthrough: create a flag with targeting rules and a gradual rollout.
+  <Card title="Targeting Rules" icon="crosshairs" href="/concepts/targeting-rules">
+    Control who sees what with segments, custom rules, and rollouts.
   </Card>
-  <Card title="React SDK Reference" icon="react" href="/sdks/react">
-    Full SDK documentation including hooks, TypeScript, caching, and Next.js patterns.
+  <Card title="Segments" icon="users" href="/concepts/segments">
+    Define reusable audiences for consistent targeting across flags.
   </Card>
-  <Card title="Plans & Pricing" icon="credit-card" href="/billing/plans">
-    Free forever on the starter plan. See what's included on each tier.
+  <Card title="Projects & Environments" icon="folder" href="/platform/projects">
+    Organize flags with per-environment configuration.
   </Card>
 </CardGroup>
