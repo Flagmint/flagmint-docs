@@ -1,8 +1,326 @@
 ---
-title: "Flags"
-description: "Coming soon."
+title: "Feature Flags"
+description: "Create, configure, and manage feature flags across environments with templates, variations, and targeting rules"
 ---
 
+# Feature Flags
+
+Feature flags are the core primitive in Flagmint. A flag is a named configuration that returns a value — boolean, string, number, or JSON — based on targeting rules and the evaluation context. Flags are scoped to a project and have per-environment values, allowing you to configure different behavior across development, staging, and production.
+
+## Creating a Flag
+
+You can create flags from the Flagmint dashboard or via the API. The dashboard offers two paths: **Quick Start templates** for common use cases, or a **standard creation** dialog for full control.
+
+### From the Dashboard
+
+When you click **+ New Flag**, you'll see the Quick Start templates and the option to create a standard flag.
+
+<img src="/images/flags-template-row.png" alt="Quick Start template selection showing Gradual Rollout, Kill Switch, and A/B Test options" />
+
+#### Quick Start Templates
+
+Templates handle configuration automatically — you provide a name and description, and Flagmint creates the flag with the right variations, rollouts, and per-environment values in a single step.
+
+| Template | Icon | What it does |
+|----------|------|-------------|
+| **Gradual Rollout** | Gauge | Boolean flag starting at 0% rollout. Takes you straight to the rollout slider. |
+| **Kill Switch** | Power | Boolean flag that's on by default. Designed to be flipped off instantly in an emergency. |
+| **A/B Test** | Flask | Multivariate flag with equal-split variants. Choose your variant type (string, number, or JSON). |
+
+Selecting a template opens a streamlined dialog — just enter a name and optional description. The key is auto-generated from the name.
+
+<img src="/images/flags-create-template.png" alt="Create flag from template dialog with name and description fields" />
+
+For **A/B Tests**, you also choose a variant type before creation:
+
+<img src="/images/flags-create-ab-test.png" alt="A/B Test creation dialog with variant type selector showing String, Number, and JSON options" />
+
+After creation, templates route you to the most relevant next step: gradual rollouts go to the rollout configuration page, kill switches go to the variations page.
+
+#### Standard Flag Creation
+
+For full control, use the standard creation dialog. This requires a name, key, type, and environment selection.
+
+<img src="/images/flags-create-standard.png" alt="Standard flag creation dialog with name, key, type selector, and description fields" />
+
+The flag key is auto-generated from the name as you type (lowercase, underscores, no special characters). You can edit it manually — once edited, auto-generation stops. The key must match the pattern `^[a-z0-9]([a-z0-9_]*[a-z0-9])?$` and be unique within the project.
+
+### Via the API
+
+```bash
+curl -X POST https://api.flagmint.com/projects/{projectId}/flags \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "New Dashboard",
+    "template": "gradual_rollout"
+  }'
+```
+
+When using a template, only `name` is required. When creating a standard flag (no template), `name`, `key`, and `type` are required.
+
+## Flag Anatomy
+
+Every flag has these core properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | string | Human-readable name (e.g. "New Dashboard") |
+| `key` | string | Unique machine-readable identifier within the project (e.g. `new_dashboard`). Auto-generated from the name if not provided. |
+| `type` | enum | Data type: `boolean`, `string`, `number`, or `json` |
+| `is_active` | boolean | Whether the flag is evaluated. Inactive flags return their off variation. |
+| `client_side_enabled` | boolean | Whether the flag is available to client-side SDKs. Defaults to `true`. |
+| `analytics_enabled` | boolean | Whether evaluation metrics are tracked. Defaults to `true`. |
+| `metadata` | object | Arbitrary key-value data. Includes `flag_template` to identify the creation template. |
+
+## Flag Types
+
+Flagmint supports four flag types, each with a default value when created:
+
+| Type | Default Value | Use Case |
+|------|--------------|----------|
+| `boolean` | `false` | Feature toggles, kill switches, gradual rollouts |
+| `string` | `""` | UI variants, copy tests, configuration values |
+| `number` | `0` | Thresholds, limits, numerical experiments |
+| `json` | `{}` | Complex configuration objects, structured payloads |
+
+<Warning>
+  **Changing a flag's type is destructive.** When you change a flag's type, all existing variations, targeting rules, and rollouts are deleted and replaced with default variations for the new type. This affects all environments. Only change a flag's type if you intend to reconfigure it from scratch.
+</Warning>
+
+## Templates in Detail
+
+### Kill Switch
+
+A boolean flag that is **on by default** and can be disabled instantly across all environments. Use this for features you want to be able to turn off in an emergency.
+
+**What gets created:**
+
+- Flag with `is_active: true` and `type: boolean`
+- Two variations: **Enabled** (default, value `true`) and **Disabled** (value `false`)
+- One flag value per environment with value `true` and `off_variation_id` pointing to Disabled
+- No targeting rules, no rollouts
+
+**How it works:** The flag evaluates to `true` for everyone. To kill the feature, set `is_active` to `false` — the SDK immediately receives the Disabled variation (`false`) for all users.
+
+```bash
+curl -X POST https://api.flagmint.com/projects/{projectId}/flags \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Payment Processing",
+    "template": "kill_switch"
+  }'
+```
+
+### Gradual Rollout
+
+A boolean flag configured for time-based progressive enablement. Starts **inactive** and can be turned on to begin the rollout.
+
+**What gets created:**
+
+- Flag with `is_active: false` and `type: boolean`
+- Two variations: **Disabled** (default, value `false`) and **Enabled** (value `true`)
+- One flag value per environment with value `false`
+- One gradual rollout record per environment with defaults: `target_percentage: 100`, `increment: 10`, `interval_hours: 24`, `start_at: null`
+
+**How it works:** Once you activate the flag and set a `start_at` time, the rollout automatically increases from 0% to 100% over 10 days (10% per day). Users are consistently assigned via hash-based bucketing.
+
+```bash
+curl -X POST https://api.flagmint.com/projects/{projectId}/flags \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "New Dashboard",
+    "template": "gradual_rollout"
+  }'
+```
+
+### A/B Test
+
+A multivariate flag pre-configured for experimentation. Requires a `flavor` parameter to specify the data type of the variations.
+
+**What gets created:**
+
+- Flag with `is_active: false` and the specified flavor type
+- Pre-populated variants (e.g. `control`, `variant_a`, `variant_b`) with equal weight splits
+- Variant rollout records per environment
+
+Valid flavors: `string`, `number`, `json`. The dashboard shows a variant type picker with descriptions for each option.
+
+```bash
+curl -X POST https://api.flagmint.com/projects/{projectId}/flags \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Checkout Flow Experiment",
+    "template": "ab_test",
+    "flavor": "string"
+  }'
+```
+
 <Note>
-  This page is under construction. Check back soon or [contact us](mailto:support@flagmint.com) if you need this information now.
+  After creation, you can adjust variant values, weights, and targeting rules. The template gives you a working starting point — customize it to match your experiment design.
 </Note>
+
+## Variations
+
+Each flag has one or more variations — the possible values the flag can return. Template-created flags come with pre-configured variations; standard flags get a single default variation.
+
+For example, a kill switch boolean flag has two variations:
+
+| Key | Name | Value | Default |
+|-----|------|-------|---------|
+| `enabled` | Enabled | `true` | Yes |
+| `disabled` | Disabled | `false` | No |
+
+The `off_variation_id` on a flag value determines which variation is returned when the flag is inactive or when no targeting rules match. For kill switches, this points to the Disabled variation — so flipping `is_active` to `false` immediately returns `false` to all users.
+
+## Per-Environment Configuration
+
+Flags exist at the project level, but their values, targeting rules, and rollouts are configured per environment. The dashboard includes an environment selector that lets you switch between environments and see the per-environment configuration at a glance.
+
+<img src="/images/environment-selector.png" alt="Environment selector interface" />
+
+This means you can:
+
+- Have a flag active in staging but inactive in production
+- Run different rollout percentages per environment
+- Apply different targeting rules in development vs production
+- Use different off variations per environment
+
+When a flag is created with a template, flag values (and rollouts, if applicable) are automatically created for every environment in the project.
+
+## Targeting Summary
+
+The flag detail page shows a **Targeting Summary** card that visualizes the complete evaluation flow for the selected environment:
+
+<img src="/images/flags-targeting-summary.png" alt="Targeting Summary card showing enabled state, numbered targeting rules with conditions, and default fallback variation" />
+
+The summary shows:
+
+- Whether the flag is **Enabled** or **Disabled** for the current environment
+- **When disabled:** which off variation is served to all users
+- **When enabled:** numbered targeting rules evaluated in order (first match wins), each showing its conditions and the variation or rollout it serves
+- **Default fallback:** the variation served when no rules match
+
+The footer reminds you that rules are evaluated top to bottom, first match wins — matching the [targeting rules](/concepts/targeting-rules) evaluation model.
+
+## Flag Lifecycle
+
+A flag moves through these states:
+
+**Created** → The flag exists with its default configuration. If created with a template, variations and rollouts are pre-configured.
+
+**Active** (`is_active: true`) → The flag is evaluated for SDK requests. Targeting rules and rollouts apply.
+
+**Inactive** (`is_active: false`) → The flag returns its off variation for all evaluations. Targeting rules are not evaluated. This is how kill switches work — toggling `is_active` immediately changes what every user sees.
+
+**Archived** (`archived_at` set) → The flag is hidden from the default list view but still exists. Archived flags cannot be updated. You can archive a flag from the dashboard using the archive dialog.
+
+**Deleted** (`deleted_at` set) → Soft-deleted. The flag is excluded from all queries and evaluations.
+
+## Evaluation Flow
+
+When the SDK requests flag values, the server evaluates each flag in this order:
+
+1. **Is the flag active?** If `is_active` is `false`, return the off variation immediately.
+2. **Is `client_side_enabled` true?** SDK evaluations only include flags marked for client-side access.
+3. **Are there targeting rules?** If yes, evaluate them using [first-match-wins](/concepts/targeting-rules#rule-ordering-and-first-match-wins) logic.
+4. **Is there a rollout?** If targeting rules match (or there are none) and a rollout is configured, apply the [rollout strategy](/concepts/targeting-rules#rollout-strategies).
+5. **Return the flag value.** Either from a matched variation, a rollout result, or the base value — coerced to the flag's expected type.
+
+If evaluation fails for any flag, the server catches the error and returns the flag's fallback value. A single flag failure does not affect other flags in the same evaluation batch.
+
+## Metrics
+
+Each flag tracks evaluation metrics per environment. The metrics screen shows four stat cards at a glance and a variation performance breakdown.
+
+<img src="/images/flags-metrics.png" alt="Flag metrics dashboard showing Total Evaluations, Unique Users, Success Rate, and Error Rate stat cards with variation performance breakdown" />
+
+### Available metrics
+
+| Metric | Description |
+|--------|-------------|
+| **Total Evaluations** | Number of times the flag was evaluated in the period |
+| **Unique Users** | Distinct users who triggered an evaluation |
+| **Success Rate** | Percentage of evaluations that completed without errors |
+| **Error Rate** | Percentage of evaluations that failed |
+| **Avg Response Time** | Mean evaluation duration in milliseconds |
+| **Variation Performance** | Breakdown of which variations were served, with evaluation counts and percentage distribution |
+
+### Time periods
+
+Use the period selector in the top right to switch between **24h**, **7d**, and **30d** views. Each metric includes a change badge showing the percentage change compared to the previous period of equal length.
+
+```bash
+curl "https://api.flagmint.com/flags/{flagId}/metrics?environmentId={envId}&period=7d" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Cache Invalidation
+
+Flag evaluation data is cached in Redis for 10 seconds to minimize database load. The cache is automatically invalidated when:
+
+- A flag is created, updated, or deleted
+- Targeting rules are modified
+- Rollout configurations change
+- Variations are added or removed
+
+The cache key pattern is `flags:eval:{environmentId}:{projectId}`. Invalidation is per-environment, so changing a flag in staging doesn't affect the production cache.
+
+## Managing Flags
+
+### Updating a flag
+
+Updates are partial — only the fields you include are modified. Omitted fields retain their current values. The dashboard uses the same dialog for editing, with the flag's current values pre-filled.
+
+```bash
+curl -X PUT https://api.flagmint.com/projects/{projectId}/flags/{flagId} \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "is_active": false,
+    "envId": "ENV_UUID"
+  }'
+```
+
+All flag changes are recorded in the [Audit Log](/platform/audit-log) with before/after diffs.
+
+### Archiving a flag
+
+Archiving hides the flag from the default list view without deleting it. Use this for flags that are no longer active but you want to keep for reference. Archived flags cannot be updated.
+
+### Deleting a flag
+
+Deletion is a soft delete. The flag is marked as deleted and excluded from all evaluations and list queries.
+
+```bash
+curl -X DELETE https://api.flagmint.com/projects/{projectId}/flags/{flagId} \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Permissions
+
+| Action | Required Role |
+|--------|--------------|
+| List / view flags | Authenticated user with project access |
+| Create / update / delete flags | Editor role |
+
+### Rate Limits
+
+Flag creation is rate limited to **20 requests per organization per hour** to prevent accidental bulk creation.
+
+## API Reference
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/projects/{projectId}/flags` | Create a flag (with optional template) |
+| `GET` | `/projects/{projectId}/flags` | List all flags in a project (paginated) |
+| `GET` | `/projects/{projectId}/flags/{id}` | Get a single flag by ID |
+| `PUT` | `/projects/{projectId}/flags/{id}` | Update a flag |
+| `DELETE` | `/projects/{projectId}/flags/{id}` | Soft delete a flag |
+| `GET` | `/projects/{projectId}/environments/{envId}/flags` | List flags with per-environment values |
+| `GET` | `/flags/{flagId}/metrics` | Get evaluation metrics for a flag |
+
+The list endpoints support pagination (`page`, `limit`), search (`search` query param matching name, key, or description), sorting (`sort`, `dir`), and filtering by template type.
