@@ -47,13 +47,14 @@
           {
             "group": "Concepts & Features",
             "pages": [
+              "concepts/organisations",
+              "concepts/projects",
+              "concepts/environments",
               "concepts/flags",
               "concepts/targeting-rules",
               "concepts/segments",
               "concepts/rollouts",
-              "concepts/environments",
-              "concepts/projects",
-              "concepts/organisations"
+              "concepts/attributes"
             ]
           },
           {
