@@ -1,0 +1,230 @@
+---
+title: "Attributes"
+description: "Define the user, organization, and custom attributes used in targeting rules and segments"
+---
+
+# Attributes
+
+Attributes are the properties you target against in segments and targeting rules. When you build a condition like "country equals DE" or "plan is in [premium, growth]", `country` and `plan` are attributes. Flagmint comes with built-in system attributes and lets you create custom attributes to match your application's data model.
+
+## How Attributes Work
+
+Attributes define what's available in the attribute picker when you create targeting rules or segment conditions. Each attribute specifies its key, data type, allowed operators, and optional suggested values — so the dashboard knows how to render the right input fields and operator dropdowns.
+
+<img src="/images/attributes-picker.png" alt="Attribute picker dropdown showing user attributes like Country, Subscription Plan, Age, and Email with a search field and Create new attribute option" />
+
+When the SDK sends an evaluation context, the evaluator matches context values against the attribute keys defined in your targeting rules. Attributes themselves don't store user data — they're a schema that tells Flagmint what properties exist and how to compare them.
+
+## Categories
+
+Every attribute belongs to one of four categories:
+
+| Category | Prefix | Description |
+|----------|--------|-------------|
+| **User** | `user.` | Properties of the individual user (e.g. email, plan, role) |
+| **Organization** | `organization.` | Properties of the user's organization (e.g. country, employee count) |
+| **Device** | `device.` | Properties of the user's device or client (e.g. platform, browser) |
+| **Custom** | `custom.` | Application-specific properties you define |
+
+<video
+  controls
+  autoPlay
+  loop
+  muted
+  playsInline
+  className="w-full rounded-lg"
+  alt="Category dropdown showing Custom, User Attributes, Organization Attributes, and Device Attributes options"
+  src="https://res.cloudinary.com/dc9t82u9g/video/upload/v1775311885/flagmint/marketing/videos/attribute-selector.mov"
+/>
+Categories map directly to the [evaluation context](/concepts/targeting-rules#context-flattening) structure. When the context is flattened, a `user.plan` attribute matches the `plan` field inside the `user` block of the context.
+
+## System vs Custom Attributes
+
+Flagmint ships with built-in **system attributes** covering common targeting scenarios (country, email, plan, age, etc.). These cannot be deleted, but they can be **deactivated** if you don't need them — deactivated attributes are hidden from the attribute picker.
+
+**Custom attributes** are ones you create to match your specific application data. Custom attributes must use the `custom` category or have a key prefixed with `custom.`.
+
+| | System Attributes | Custom Attributes |
+|---|------------------|-------------------|
+| **Created by** | Flagmint (built-in) | You |
+| **Editable** | No | Yes (label, operators, suggestions, description) |
+| **Deletable** | No (can deactivate) | Yes |
+| **Category** | Any | Must be `custom` or use `custom.` key prefix |
+
+## Creating a Custom Attribute
+
+### From the Dashboard
+
+Click **+ Create new attribute** at the bottom of the attribute picker, or navigate to the attributes management page.
+
+<video
+  controls
+  autoPlay
+  loop
+  muted
+  playsInline
+  className="w-full rounded-lg"
+  src="https://res.cloudinary.com/dc9t82u9g/video/upload/v1775311179/flagmint/marketing/videos/create_custom_attributes_tgd2jz.mp4"
+/>
+Fill in the details:
+
+- **Key** — Unique identifier used in targeting rules and the evaluation context. Must be lowercase, alphanumeric with dots and underscores only (2–255 characters). Examples: `custom.tier`, `custom.signup_source`, `user.role`.
+- **Label** — Human-readable name shown in the dashboard (e.g. "User Role", "Company Size").
+- **Type** — Data type of the attribute: `string`, `number`, or `boolean`. This determines which operators are available.
+- **Category** — Which context category this attribute belongs to: Custom, User, Organization, or Device.
+- **Description** (optional) — Explains what the attribute represents.
+- **Suggestions** (optional) — Comma-separated values shown as autocomplete suggestions in dropdowns (e.g. "admin, user, guest").
+- **Placeholder** (optional) — Hint text shown in input fields when building conditions.
+
+### Via the API
+
+```bash
+curl -X POST https://api.flagmint.com/api/attributes \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "key": "custom.signup_source",
+    "label": "Signup Source",
+    "type": "string",
+    "category": "custom",
+    "operators": ["eq", "neq", "in", "nin", "exists", "not_exists"],
+    "suggestions": ["organic", "referral", "paid_ad", "social"],
+    "placeholder": "e.g., organic",
+    "description": "How the user discovered the product"
+  }'
+```
+
+## Attribute Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `key` | string | Yes | Unique identifier. Lowercase, alphanumeric, dots, underscores. 2–255 chars. |
+| `label` | string | Yes | Human-readable name shown in the UI |
+| `type` | enum | Yes | `string`, `number`, or `boolean` |
+| `category` | enum | Yes | `user`, `organization`, `device`, or `custom` |
+| `operators` | string[] | Yes | Allowed comparison operators for this attribute |
+| `suggestions` | array | No | Pre-defined values shown as autocomplete options |
+| `placeholder` | string | No | Hint text for input fields |
+| `description` | string | No | What the attribute represents |
+| `is_custom` | boolean | — | `true` for custom attributes, `false` for system attributes |
+| `is_active` | boolean | — | Whether the attribute appears in the attribute picker |
+
+## Operators
+
+When creating an attribute, you specify which operators are valid for it. The available operators are:
+
+| Operator | Description | Typical Types |
+|----------|-------------|---------------|
+| `eq` | Equals | string, number, boolean |
+| `neq` | Not equals | string, number, boolean |
+| `in` | Is in list | string, number |
+| `nin` | Not in list | string, number |
+| `gt` | Greater than | number |
+| `lt` | Less than | number |
+| `exists` | Attribute is present | any |
+| `not_exists` | Attribute is absent | any |
+
+The dashboard automatically shows the appropriate operators based on the attribute's type. For example, a string attribute might allow `eq`, `neq`, `in`, `nin`, `exists`, `not_exists`, while a number attribute would also include `gt` and `lt`.
+
+<Note>
+  The operators defined on the attribute control what's available in the dashboard's condition builder. The server-side evaluator additionally supports `contains`, `not_contains`, `startsWith`, and `endsWith` — these can be used via the API even if not listed on the attribute's operator set.
+</Note>
+
+## Managing Attributes
+
+### Updating a custom attribute
+
+Only custom attributes can be updated. You can change the label, operators, suggestions, placeholder, and description. The key, type, and category cannot be changed after creation.
+
+```bash
+curl -X PATCH https://api.flagmint.com/api/attributes/custom.signup_source \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "label": "Acquisition Channel",
+    "suggestions": ["organic", "referral", "paid_ad", "social", "email_campaign"]
+  }'
+```
+
+### Deactivating an attribute
+
+Both system and custom attributes can be deactivated. Deactivated attributes are hidden from the attribute picker in the dashboard but remain in the database. Existing targeting rules that reference a deactivated attribute continue to work.
+
+```bash
+curl -X PATCH https://api.flagmint.com/api/attributes/device.browser/deactivate \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Deleting a custom attribute
+
+Only custom attributes can be deleted. System attributes return a `403 Forbidden` error if you attempt to delete them. Deletion is permanent (hard delete, not soft delete).
+
+```bash
+curl -X DELETE https://api.flagmint.com/api/attributes/custom.signup_source \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+<Warning>
+  Deleting an attribute does not automatically remove it from existing targeting rules or segments that reference it. Those conditions will continue to evaluate but may behave unexpectedly if the attribute is no longer sent in the evaluation context.
+</Warning>
+
+## Permissions
+
+All attribute operations require authentication. There are no role-specific restrictions beyond being authenticated — any authenticated user can view, create, update, and delete custom attributes.
+
+## API Reference
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/attributes` | List all attributes (paginated, filterable) |
+| `GET` | `/api/attributes/{key}` | Get a single attribute by key |
+| `POST` | `/api/attributes` | Create a custom attribute |
+| `PATCH` | `/api/attributes/{key}` | Update a custom attribute |
+| `DELETE` | `/api/attributes/{key}` | Delete a custom attribute |
+| `PATCH` | `/api/attributes/{key}/deactivate` | Deactivate an attribute |
+
+The list endpoint supports filtering by `category`, `is_active`, and `search` (matches key or label), with pagination via `page` and `limit`.
+
+## Examples
+
+### String attribute with suggestions
+
+```json
+{
+  "key": "custom.tier",
+  "label": "Customer Tier",
+  "type": "string",
+  "category": "custom",
+  "operators": ["eq", "neq", "in", "nin", "exists", "not_exists"],
+  "suggestions": ["free", "starter", "pro", "enterprise"],
+  "placeholder": "Select a tier",
+  "description": "The customer's subscription tier"
+}
+```
+
+### Numeric attribute for thresholds
+
+```json
+{
+  "key": "custom.monthly_spend",
+  "label": "Monthly Spend (EUR)",
+  "type": "number",
+  "category": "custom",
+  "operators": ["eq", "neq", "gt", "lt", "exists", "not_exists"],
+  "placeholder": "e.g., 500",
+  "description": "Customer's average monthly spend in EUR"
+}
+```
+
+### Boolean attribute
+
+```json
+{
+  "key": "custom.has_completed_onboarding",
+  "label": "Completed Onboarding",
+  "type": "boolean",
+  "category": "custom",
+  "operators": ["eq", "exists", "not_exists"],
+  "description": "Whether the user has completed the onboarding flow"
+}
+```
