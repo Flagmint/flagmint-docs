@@ -1,0 +1,381 @@
+---
+title: "Inviting Team Members"
+description: "Learn how to invite colleagues to your FlagMint organization and collaborate on feature flags."
+---
+
+# Inviting Team Members
+
+Collaborate with your team by inviting members to your FlagMint organization. This guide shows you how to send invitations, manage roles, and help new members get started.
+
+---
+
+## Overview
+
+Inviting team members to FlagMint is simple:
+
+1. **Send an invitation** - Invite one person or multiple people at once
+2. **They receive an email** - Your teammate gets an invitation link
+3. **They join your organization** - They create their account and start collaborating
+
+Invitations are valid for **3 days** and can be sent to anyone with an email address.
+
+---
+
+## Who Can Invite Team Members?
+
+- **Admins** can invite anyone and send bulk invitations
+- **Editors** can invite individual team members
+- **Viewers** cannot send invitations
+
+---
+
+## Inviting a Single Team Member
+
+### From the Team Settings Page
+
+1. **Navigate to Settings** - Click the Settings icon in the sidebar, then select **Team**
+2. **Click "Invite Member"** - Find the button in the page header
+3. **Fill in the invitation form:**
+   - **Name** - Your teammate's full name
+   - **Email** - Their work email address
+   - **Role** - Choose Editor or Viewer (see roles below)
+4. **Click "Send Invite"** - The invitation email is sent immediately
+
+### From the Dashboard
+
+You can also invite team members directly from your dashboard:
+
+1. Look for the **"Invite Team Member"** card on the right side
+2. Click **"Invite Team Member"**
+3. Fill in the same form as above
+4. Click **"Send Invite"**
+
+### What Happens Next?
+
+- Your teammate receives an email with an invitation link
+- The link is valid for 3 days
+- They click the link to create their account
+- Once they sign up, they'll appear in your team list
+
+<Tip>
+  **Need to invite multiple people?** At the bottom of the invitation form, click "Try bulk CSV import" to invite many team members at once.
+</Tip>
+
+---
+
+## Inviting Multiple Team Members (Bulk Invite)
+
+Save time by inviting multiple teammates in one go using a CSV file.
+
+### Step 1: Prepare Your CSV File
+
+**Option A: Download Our Template**
+
+1. Go to **Settings → Team**
+2. Click **"Bulk Invite (CSV)"** in the page header
+3. Click **"Download CSV Template"** in the dialog
+4. Open the file in Excel, Google Sheets, or any spreadsheet app
+
+**Option B: Create Your Own**
+
+Create a CSV file with these two columns:
+
+```
+name,email
+John Doe,john@company.com
+Jane Smith,jane@company.com
+Mike Johnson,mike@company.com
+```
+
+**Important Notes:**
+- First row must be the headers: `name,email`
+- One person per row
+- Maximum file size: 1 MB
+- **Free plan:** 1 invitation at a time
+- **Paid plans:** Up to 20 invitations at once
+
+### Step 2: Upload Your CSV
+
+1. Click **"Bulk Invite (CSV)"** from the Team Settings page
+2. **Drag and drop** your CSV file onto the upload area, or click to browse
+3. Wait a moment while your file is processed
+
+### Step 3: Review and Assign Roles
+
+You'll see a preview of everyone you're about to invite:
+
+- **Green checkmark** ✅ - Ready to send
+- **Red X** ❌ - There's an error (fix the email or name)
+- **Yellow warning** ⚠️ - Duplicate email in your list
+
+For each person, select their role:
+- **Editor** - Can create and modify feature flags
+- **Viewer** - Can only view flags
+
+You can:
+- Edit names or emails directly in the table
+- Change roles using the dropdown
+- Remove anyone by clicking the trash icon
+- Click **"Back"** to upload a different file
+
+When you're ready, click **"Continue"**.
+
+### Step 4: View Results
+
+After sending, you'll see a summary:
+
+- **✅ Successful** - Invitation sent
+- **🔵 Skipped** - Person is already a team member or was recently invited
+- **❌ Failed** - Invalid email or other error
+
+Click **"Done"** to close the dialog, or **"Send More"** to invite additional people.
+
+<Note>
+  Skipped invitations aren't errors - they just mean the person is already in your organization or already has a pending invitation.
+</Note>
+
+### Plan Limits
+
+If you try to invite more people than your plan allows:
+
+- **Free plan:** You can invite 1 person at a time
+- **Paid plans:** You can invite up to 20 people at once
+
+To invite more people, either:
+- Send multiple batches
+- Upgrade your plan
+
+---
+
+## Understanding Roles
+
+When you invite someone, you assign them a role. Here's what each role can do:
+
+### Editor
+
+**Best for:** Developers, product managers, team leads
+
+**Can do:**
+- View all feature flags
+- Create new feature flags
+- Edit existing flags
+- Toggle flags on/off
+- Create and edit segments
+- Manage environments
+- View analytics
+
+**Cannot do:**
+- Manage billing
+- Delete the organization
+- Change other people's roles (only admins can)
+
+### Viewer
+
+**Best for:** Stakeholders, analysts, observers
+
+**Can do:**
+- View all feature flags and their status
+- View segments
+- View analytics and reports
+
+**Cannot do:**
+- Create or edit flags
+- Toggle flags on/off
+- Create or edit segments
+- Invite team members
+
+<Tip>
+  You can always change someone's role later from the Team Settings page. Only admins can change roles.
+</Tip>
+
+---
+
+## Accepting an Invitation
+
+### If You've Been Invited
+
+When someone invites you to their FlagMint organization, here's what to do:
+
+1. **Check your email** - Look for an email from FlagMint with the subject "You've been invited to [Organization Name]"
+2. **Click the invitation link** - This takes you to the sign-up page
+3. **Review the invitation details:**
+   - Organization you're joining
+   - Your assigned role
+   - Who invited you
+4. **Choose how to sign up:**
+
+### Option 1: Sign Up with Google
+
+1. Click **"Continue with Google"**
+2. Select your Google account
+3. You're all set! You'll be redirected to the dashboard
+
+### Option 2: Sign Up with Email and Password
+
+1. Enter your **full name** (pre-filled from the invitation)
+2. Create a **password**:
+   - At least 8 characters
+   - Include uppercase and lowercase letters
+   - Include at least one number
+3. **Confirm your password**
+4. Click **"Create Account"**
+5. Check your email to verify your account
+
+### After Signing Up
+
+- You'll have access to your organization immediately
+- Your role determines what you can do
+- You can start collaborating on feature flags right away
+
+<Warning>
+  Invitation links expire after 3 days. If your link has expired, ask your teammate to send a new invitation.
+</Warning>
+
+---
+
+## Managing Your Team
+
+### Viewing Your Team Members
+
+1. Go to **Settings → Team**
+2. You'll see a list of all members with:
+   - Name
+   - Email address
+   - Role
+   - When they joined
+
+### Removing a Team Member
+
+**Only admins can remove team members.**
+
+1. Go to **Settings → Team**
+2. Find the team member in the list
+3. Click the **trash icon** next to their name
+4. Confirm the removal
+5. They'll immediately lose access to your organization
+
+---
+
+## Common Questions
+
+### How long are invitations valid?
+
+Invitations expire after **3 days**. If someone doesn't accept in time, you'll need to send a new invitation.
+
+### Can I resend an invitation?
+
+Currently, you'll need to send a new invitation if the old one expires. We're working on adding a "resend" option.
+
+### What if someone doesn't receive the invitation email?
+
+Ask them to:
+- Check their spam/junk folder
+- Search their email for "flagmint"
+- Check with their IT department about email filtering
+
+If they still haven't received it after a few minutes, try sending a new invitation.
+
+### Can I invite someone who already has a FlagMint account?
+
+Yes! If they already have an account, they'll be added to your organization when they accept the invitation.
+
+### Can the same person be in multiple organizations?
+
+Yes, one person can be a member of multiple FlagMint organizations with different roles in each.
+
+### What happens if I try to invite someone twice?
+
+You'll see a "skipped" status if:
+- They're already a member
+- They have a pending invitation that hasn't expired
+- You included their email twice in a bulk upload
+
+This prevents duplicate invitations and doesn't count as an error.
+
+### Can I change someone's role after inviting them?
+
+Yes! Admins can change any team member's role from the Team Settings page. The change takes effect immediately.
+
+### Do invitations cost anything?
+
+No, sending invitations is free. You only pay for your subscription based on your plan.
+
+### Can I cancel an invitation?
+
+Currently, invitations expire automatically after 3 days. We're working on adding a manual cancellation option.
+
+---
+
+## Tips for Success
+
+### For Sending Invitations
+
+1. **Use clear names** - Use full names so team members can recognize each other
+2. **Double-check emails** - Typos in email addresses will fail
+3. **Assign appropriate roles** - Give people the access they need (but not more)
+4. **Plan for growth** - Consider your plan limits before bulk inviting
+
+### For Accepting Invitations
+
+1. **Act quickly** - Don't wait until the last day; links expire in 3 days
+2. **Use a strong password** - If not using Google sign-in
+3. **Check the organization name** - Make sure it's the right team
+4. **Save your login info** - You'll need it to access FlagMint later
+
+---
+
+## Troubleshooting
+
+### "Invalid or expired token" Error
+
+**Why this happens:**
+- The invitation link is older than 3 days
+- The link was already used
+- The link was copied incorrectly
+
+**Solution:** Ask your teammate to send a new invitation.
+
+### Can't Upload CSV File
+
+**Why this happens:**
+- File is larger than 1 MB
+- File isn't a CSV format
+- File doesn't have the correct headers
+
+**Solution:**
+- Make sure your file is saved as `.csv`
+- Use the template we provide
+- Reduce the number of rows if the file is too large
+
+### "Plan Limit Exceeded" Error
+
+**Why this happens:**
+- Free plans can only invite 1 person at a time
+- Paid plans max out at 20 invitations per batch
+
+**Solution:**
+- Send invitations in smaller batches
+- Upgrade your plan for higher limits
+
+### Invitation Email Not Received
+
+**Try these steps:**
+1. Wait 5-10 minutes (emails can be delayed)
+2. Check spam/junk folder
+3. Search email for "flagmint" or the inviter's name
+4. Ask your IT team if emails from flagmint.com are blocked
+5. Request a new invitation to be sent
+
+---
+
+## Need Help?
+
+Can't find what you're looking for?
+
+- **Email Support:** [support@flagmint.com](mailto:support@flagmint.com)
+- **Documentation:** [https://docs.flagmint.com](https://docs.flagmint.com)
+- **System Status:** Check if email delivery is experiencing issues
+
+---
+
+**Last Updated:** April 2026
