@@ -77,6 +77,12 @@
             ]
           },
           {
+            "group": "Platform",
+            "pages": [
+              "platform/webhooks"
+            ]
+          },
+          {
             "group": "Resources",
             "pages": [
               "resources/migrate-from-launchdarkly",
