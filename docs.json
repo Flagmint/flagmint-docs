@@ -42,7 +42,8 @@
               "getting-started/quickstart",
               "getting-started/concepts",
               "getting-started/your-first-flag",
-              "getting-started/invitation"
+              "getting-started/invitation",
+              "getting-started/evaluation-logic"
             ]
           },
           {
@@ -73,6 +74,12 @@
               "security/data-residency",
               "security/dpa",
               "security/practices"
+            ]
+          },
+          {
+            "group": "Platform",
+            "pages": [
+              "platform/webhooks"
             ]
           },
           {
