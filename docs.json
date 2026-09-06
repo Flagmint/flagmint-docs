@@ -56,6 +56,7 @@
               "concepts/targeting-rules",
               "concepts/segments",
               "concepts/rollouts",
+              "concepts/measuring-ab-outcomes",
               "concepts/guardrails",
               "concepts/attributes"
             ]

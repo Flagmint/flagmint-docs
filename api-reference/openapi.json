@@ -16,7 +16,7 @@
         "type": "apiKey",
         "in": "header",
         "name": "x-api-key",
-        "description": "Environment SDK key (ff_…)"
+        "description": "Environment SDK key (ff_\u2026)"
       }
     },
     "schemas": {}
@@ -3006,7 +3006,7 @@
         "tags": [
           "Organizations"
         ],
-        "description": "Retrieves a single organization’s full record by ID. Requires authentication and the user must be an admin or editor within the organization.",
+        "description": "Retrieves a single organization\u2019s full record by ID. Requires authentication and the user must be an admin or editor within the organization.",
         "parameters": [
           {
             "schema": {
@@ -5169,7 +5169,7 @@
         "tags": [
           "Billing"
         ],
-        "description": "\n    Generate a **short-lived Stripe Billing Portal session** for an organization admin.  \n    This portal link allows the admin to manage billing-related tasks securely within Stripe's hosted UI.\n\n    ### What the portal provides\n    - View all current and past subscriptions tied to the organization\n    - Update payment methods (cards, bank accounts, etc.)\n    - View/download invoices and receipts\n    - Cancel or resume subscriptions\n    - Update billing information\n\n    The returned `url` is a temporary, single-use HTTPS link to Stripe's billing portal, e.g.:\n\n    ```text\n    https://billing.stripe.com/p/session/test_YWNjdF8xUjVENkJDdnlkaXZnY21CLF9UNzRYcVA3eDZ4eEExS0I2ZDNLUmhVUHVXWGZSd2xC01003ZjV6GWq\n    ```\n\n    ⚠️ **Security note:** This URL is short-lived and should only be shown to the authenticated admin requesting it. Do not persist or reuse it in your own database.\n  ",
+        "description": "\n    Generate a **short-lived Stripe Billing Portal session** for an organization admin.  \n    This portal link allows the admin to manage billing-related tasks securely within Stripe's hosted UI.\n\n    ### What the portal provides\n    - View all current and past subscriptions tied to the organization\n    - Update payment methods (cards, bank accounts, etc.)\n    - View/download invoices and receipts\n    - Cancel or resume subscriptions\n    - Update billing information\n\n    The returned `url` is a temporary, single-use HTTPS link to Stripe's billing portal, e.g.:\n\n    ```text\n    https://billing.stripe.com/p/session/test_YWNjdF8xUjVENkJDdnlkaXZnY21CLF9UNzRYcVA3eDZ4eEExS0I2ZDNLUmhVUHVXWGZSd2xC01003ZjV6GWq\n    ```\n\n    \u26a0\ufe0f **Security note:** This URL is short-lived and should only be shown to the authenticated admin requesting it. Do not persist or reuse it in your own database.\n  ",
         "parameters": [
           {
             "schema": {
@@ -5836,7 +5836,7 @@
         "tags": [
           "Billing"
         ],
-        "description": "Public endpoint — no auth required. Captures org context when the caller is authenticated. Rate limited to 3 submissions per IP per day.",
+        "description": "Public endpoint \u2014 no auth required. Captures org context when the caller is authenticated. Rate limited to 3 submissions per IP per day.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -12682,6 +12682,81 @@
                             "change"
                           ]
                         },
+                        "applicationErrorRate": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "string"
+                            },
+                            "change": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "change"
+                          ]
+                        },
+                        "conversionRate": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "string"
+                            },
+                            "change": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "change"
+                          ]
+                        },
+                        "conversionGoalEvents": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "goalEventCount": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "number"
+                            },
+                            "change": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "change"
+                          ]
+                        },
+                        "customEventCount": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "number"
+                            },
+                            "change": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "change"
+                          ]
+                        },
+                        "customEventCounts": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "number"
+                          }
+                        },
                         "avgResponseTime": {
                           "type": "object",
                           "properties": {
@@ -12713,13 +12788,33 @@
                               },
                               "percentage": {
                                 "type": "number"
+                              },
+                              "appErrorCount": {
+                                "type": "number"
+                              },
+                              "appErrorRate": {
+                                "type": "number"
+                              },
+                              "customEventCount": {
+                                "type": "number"
+                              },
+                              "conversionRate": {
+                                "type": "number"
+                              },
+                              "goalEventCount": {
+                                "type": "number"
                               }
                             },
                             "required": [
                               "key",
                               "name",
                               "evaluations",
-                              "percentage"
+                              "percentage",
+                              "appErrorCount",
+                              "appErrorRate",
+                              "customEventCount",
+                              "goalEventCount",
+                              "conversionRate"
                             ]
                           }
                         }
@@ -12729,6 +12824,12 @@
                         "uniqueUsers",
                         "successRate",
                         "errorRate",
+                        "applicationErrorRate",
+                        "conversionRate",
+                        "conversionGoalEvents",
+                        "goalEventCount",
+                        "customEventCount",
+                        "customEventCounts",
                         "avgResponseTime",
                         "variationPerformance"
                       ]
@@ -14186,7 +14287,7 @@
         "tags": [
           "Flag Values"
         ],
-        "description": "\nFetch the full configuration of a flag in a specific project + environment.  \n**Access:** Viewers, Editors, Admins, or SDKs with read-only token for the project.  \nReturns the flag’s value, type, targeting rules, and rollout strategy.",
+        "description": "\nFetch the full configuration of a flag in a specific project + environment.  \n**Access:** Viewers, Editors, Admins, or SDKs with read-only token for the project.  \nReturns the flag\u2019s value, type, targeting rules, and rollout strategy.",
         "parameters": [
           {
             "schema": {
@@ -22362,7 +22463,7 @@
           }
         ],
         "deprecated": true,
-        "description": "One-shot evaluation. Deprecated for streaming clients — use POST /auth/asl-handshake then GET /evaluator/v2/flags/stream. Still used by long-polling.",
+        "description": "One-shot evaluation. Deprecated for streaming clients \u2014 use POST /auth/asl-handshake then GET /evaluator/v2/flags/stream. Still used by long-polling.",
         "parameters": [
           {
             "schema": {
@@ -22371,7 +22472,7 @@
             "in": "header",
             "name": "x-api-key",
             "required": true,
-            "description": "Environment SDK key (ff_…)"
+            "description": "Environment SDK key (ff_\u2026)"
           }
         ],
         "requestBody": {
@@ -22429,7 +22530,7 @@
             "in": "header",
             "name": "x-api-key",
             "required": true,
-            "description": "Environment SDK key (ff_…)"
+            "description": "Environment SDK key (ff_\u2026)"
           }
         ],
         "responses": {
@@ -22576,7 +22677,7 @@
           "Evaluation"
         ],
         "security": [],
-        "description": "Opens a text/event-stream. Clients must provide a valid sessionId from POST /auth/asl-handshake. Do not send x-api-key — the session token is the credential and is consumed on open. Named events: connected, then flags. Heartbeats are SSE comments (`: heartbeat`). Quota exhaustion on this request is a quota_exceeded event, then the stream closes.",
+        "description": "Opens a text/event-stream. Clients must provide a valid sessionId from POST /auth/asl-handshake. Do not send x-api-key \u2014 the session token is the credential and is consumed on open. Named events: connected, then flags. Heartbeats are SSE comments (`: heartbeat`). Quota exhaustion on this request is a quota_exceeded event, then the stream closes.",
         "parameters": [
           {
             "name": "sessionId",
@@ -22729,7 +22830,7 @@
             "apiKeyAuth": []
           }
         ],
-        "description": "Queues a context change for an existing SSE connection. HTTP 202 does not include evaluated flags — those arrive as a flags event on the open stream after a 400ms debounce. Authenticate with x-api-key (not Authorization). The key must match the connection's org, project, and environment.",
+        "description": "Queues a context change for an existing SSE connection. HTTP 202 does not include evaluated flags \u2014 those arrive as a flags event on the open stream after a 400ms debounce. Authenticate with x-api-key (not Authorization). The key must match the connection's org, project, and environment.",
         "parameters": [
           {
             "schema": {
@@ -22738,7 +22839,7 @@
             "in": "header",
             "name": "x-api-key",
             "required": true,
-            "description": "Environment SDK key (ff_…). Must match the connection's org, project, and environment."
+            "description": "Environment SDK key (ff_\u2026). Must match the connection's org, project, and environment."
           }
         ],
         "requestBody": {
@@ -25756,7 +25857,7 @@
         "tags": [
           "Public"
         ],
-        "description": "Public endpoint — no auth required. Submits a sales inquiry, verifies the Cloudflare Turnstile token, and sends notification + confirmation emails. Rate limited to 3 requests per IP per 15 minutes and 2 per email per hour.",
+        "description": "Public endpoint \u2014 no auth required. Submits a sales inquiry, verifies the Cloudflare Turnstile token, and sends notification + confirmation emails. Rate limited to 3 requests per IP per 15 minutes and 2 per email per hour.",
         "requestBody": {
           "content": {
             "application/json": {
