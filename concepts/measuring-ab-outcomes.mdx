@@ -1,0 +1,192 @@
+---
+title: "Measuring A/B outcomes"
+description: "Turn a feature flag into an experiment — split traffic, track one goal, compare variants on Experiment and Metrics"
+---
+
+# Measuring A/B outcomes
+
+Flagmint records **exposure** automatically when the SDK evaluates a flag. To learn which variant wins, record **outcomes** with `track()` when the success action happens — then compare variants on the **Experiment** tab.
+
+You do not need a second analytics product for the decision loop: create an A/B flag → serve a variant → track one goal → read the winner.
+
+<CardGroup cols={3}>
+  <Card title="1. Create" icon="flask">
+    Start an A/B test from the dashboard. Equal-split variants are ready on create.
+  </Card>
+  <Card title="2. Serve" icon="code">
+    Evaluate the flag in your app so each visitor is bucketed into a variation.
+  </Card>
+  <Card title="3. Track" icon="bullseye">
+    Call `track(flagKey, eventName)` when the goal happens. Open Experiment after flush.
+  </Card>
+</CardGroup>
+
+---
+
+## Where to start
+
+| Path | What it is for |
+|------|----------------|
+| **Dashboard → A/B Tests** | Hooked entry: **Start A/B test**, recent experiments, short how-to |
+| **Flags → A/B Test template** | Same create flow from the flags list |
+| **Flag → Experiment** | Exposure, goal conversion, outcome events per variation |
+| **Flag → Metrics** | Ops view: evaluations, errors, goal conversion, custom-event volume |
+
+**Experiment** is available for A/B template flags and for non-boolean flags with two or more variations. Kill switches and boolean gradual rollouts stay on **Metrics** for evaluations and errors — Experiment is disabled there with an explanation.
+
+---
+
+## Three steps end to end
+
+### 1. Create the experiment
+
+Use **Start an A/B test** (dashboard or Quick Start templates). Choose a variant type (`string`, `number`, or `JSON`). Flagmint seeds **control**, **variant_a**, and **variant_b** with an equal traffic split.
+
+After create you land on **Rollout** to confirm weights, then open **Experiment** for outcomes.
+
+### 2. Serve a variant
+
+Evaluate the flag so visitors are bucketed. Example (React):
+
+```jsx
+const variant = useFlag('checkout_button_test', 'control');
+
+return variant === 'variant_a' ? <GreenButton /> : <BlueButton />;
+```
+
+Each evaluation is an **exposure**. That count is the denominator for conversion.
+
+### 3. Track the goal
+
+When the success outcome happens, call `track()` with the **same flag key**:
+
+```javascript
+// After checkout succeeds
+client.track('checkout_button_test', 'checkout_completed', {
+  orderId: 'ord_123',
+});
+```
+
+Or with the React hook:
+
+```jsx
+const { track } = useFlagmint();
+
+track('checkout_button_test', 'checkout_completed');
+```
+
+<Note>
+  Enable **Analytics Tracking** on the flag (Settings) or events are skipped at ingest. Metrics and Experiment usually update after the evaluation flush worker (~5 minutes).
+</Note>
+
+---
+
+## Goal conversion vs custom events
+
+Not every `track()` call is a conversion.
+
+| Signal | What counts | Use it for |
+|--------|-------------|------------|
+| **Conversion rate** | Success-oriented goal events ÷ evaluations | Which variant drives the outcome you care about |
+| **Custom events** | Every `track()` call in the window | Volume and breakdown by event name |
+
+**Goal events** are inferred from the event names you send:
+
+- Success-style names count toward conversion (e.g. `checkout_completed`, `signup_started`, `homepage_helpful_yes`)
+- Negative-style names are **excluded** from conversion (e.g. `*_no`, `*_failure`, `*_cancel`) but still appear under custom events / outcome lists
+
+So a “Not helpful” vote raises **custom events**, not **conversion**. That keeps the winner callout aligned with product success, not with any click.
+
+Name goals clearly (`*_yes`, `*_completed`, `*_success`) so Flagmint can infer them automatically.
+
+---
+
+## Reading Experiment and Metrics
+
+### Experiment tab
+
+Decision surface for competing variants:
+
+- Evaluations and unique users (exposure)
+- **Conversion rate** (goal events ÷ evaluations)
+- Exposure by variation, with goal outcomes per variant
+- Outcome events broken down by event name and variation
+- Optional product-specific panels (for example homepage clarity votes on `homepage_variant`)
+
+### Metrics tab
+
+Ops + experiment detail:
+
+- Evaluations, engine errors, app errors (`trackError`)
+- Conversion rate and custom-event volume
+- Variation performance, including goal conversion per variant
+- **Leader callout** (see sample size below)
+
+### Flag brief
+
+Quick snapshot on the flag drawer: evaluations, conversion, custom events, and (when relevant) clarity votes per variation.
+
+---
+
+## Sample size: “leads” vs early signal
+
+Flagmint will not crown a conversion winner on tiny traffic.
+
+| Callout | When | Meaning |
+|---------|------|---------|
+| **Leads on goal conversion** (blue) | Variation has ≥ **30** evaluations **and** ≥ **5** goal events | Enough sample to treat as the current leader |
+| **Highest goal rate so far (low sample)** (amber) | Goal events exist but below those thresholds | Directional only — do not ship on this alone |
+
+Copy is plain language, for example:
+
+> **Product** leads on goal conversion — 112 homepage helpful yes events out of 420 evaluations (26.7%).
+
+Hover the callout for the exact rules.
+
+---
+
+## Attribution
+
+Outcomes join to the visitor’s **last evaluation** for that flag when a last-eval record exists. If there is no last evaluation (never evaluated, or expired), Flagmint uses the client-supplied `variationValue` on the event.
+
+That keeps attribution stable even when the client snapshot is slightly stale.
+
+---
+
+## Worked example: homepage clarity
+
+Flagmint’s marketing homepage runs `homepage_variant` (product vs legacy):
+
+1. Visitor is evaluated into a variation.
+2. The clarity chip sends `homepage_helpful_yes` or `homepage_helpful_no`.
+3. After flush, **Experiment** and the flag brief show votes per variation.
+4. **Conversion** uses yes only; **custom events** include yes and no.
+5. With light traffic you may see the amber low-sample callout until thresholds are met.
+
+Staging/dev QA helpers (ignored in production):
+
+- `?flagmint_track=1` — send a yes-style custom event  
+- `?flagmint_track=no` — send a no-style event  
+- `?flagmint_boom=1` — app-error path (does **not** inflate conversion)
+
+---
+
+## Checklist
+
+- [ ] Flag created with the **A/B Test** template (or multi-variant string/number/JSON)
+- [ ] **Analytics Tracking** enabled
+- [ ] App evaluates the flag for real visitors
+- [ ] App calls `track(flagKey, successEvent)` on the goal
+- [ ] Negative outcomes use clear names (`*_no`) if you need them — they will not raise conversion
+- [ ] Open **Experiment** after flush; use **Metrics** for errors and the leader callout
+- [ ] Wait for ≥30 evaluations and ≥5 goal events on a variation before treating “leads” as a ship signal
+
+---
+
+## Related
+
+- [Feature flags](/concepts/flags) — A/B Test template
+- [Rollouts](/concepts/rollouts) — variant traffic splits
+- [Guardrails](/concepts/guardrails) — `trackError` and auto-pause (separate from conversion)
+- [QA scenarios](/resources/qa-scenarios) — when to choose A/B vs gradual vs kill switch
+- SDK references: [React](/sdks/react), [Vue](/sdks/vuejs), [Node.js](/sdks/nodejs)

@@ -124,7 +124,8 @@ The metrics relevant to guardrails are:
 | Metric | What it shows |
 |--------|--------------|
 | **App error rate** | `(trackError() calls / evaluations) × 100` for this flag. This is exactly the value the guardrail checker compares against your threshold. |
-| **Custom events** | Total `track()` calls attributed to this flag. Conversion tracking; does not affect guardrails. |
+| **Conversion rate** | Goal `track()` events ÷ evaluations. Success-oriented events count (e.g. `checkout_completed`, `*_yes`); negative outcomes like `*_no` / `*_failure` do not. Does not affect guardrails. |
+| **Custom events** | Total `track()` calls attributed to this flag (including negative outcomes). Does not affect guardrails. |
 | **Eval error rate** | Flagmint engine errors (served a fallback). Separate from app errors — this reflects SDK/infra issues, not your application code. |
 | **Evaluations** | Total times the flag was requested. Used as the denominator for the app error rate and as the gate for `min_evaluations`. |
 
@@ -261,6 +262,22 @@ client.track('new_checkout_flow', 'checkout_completed', {
 ```
 
 Custom events appear in the flag's analytics panel and can be used to measure the positive impact of a feature alongside error rates.
+
+### Measuring A/B outcomes
+
+Flagmint records **exposure** on evaluation. Record **outcomes** with `track()` when the success action happens, then compare variants on **Experiment** and **Metrics**.
+
+1. **Evaluate** the flag so the visitor is bucketed.
+2. **Track** the goal: `client.track(flagKey, eventName, extra)` (or POST `/evaluator/events` with `kind: "custom"`).
+3. **Compare** goal conversion (success-oriented events ÷ evaluations) and custom-event volume per variation. Negative names such as `*_no` do not raise conversion.
+
+Events join to the visitor’s **last evaluation** when present. Enable **Analytics Tracking** or events are skipped at ingest. UI metrics usually appear after the ~5-minute flush.
+
+<Card title="Full guide: Measuring A/B outcomes" icon="flask" href="/concepts/measuring-ab-outcomes">
+  Three-step loop, goal vs custom events, Experiment vs Metrics, sample-size rules, and the homepage clarity example.
+</Card>
+
+Flagmint’s marketing homepage uses this pattern: `homepage_variant` sends `homepage_helpful_yes` / `homepage_helpful_no`, visible in the flag brief and Experiment tab.
 
 ### Event behaviour
 
